@@ -17,6 +17,8 @@ jobs:
         with:  
           node-version: 14.X
       - run: npm install
+      - name: tsc
+        uses: icrawl/action-tsc@v1
       - run: npm run all
       - name: Zip Release
         uses: TheDoctor0/zip-release@0.6.0

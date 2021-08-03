@@ -8,7 +8,7 @@
     "test": "nyc --reporter=text -e .ts -x \"*.test.ts\" npm run test-no-coverage",
     "complexity": "npx ts-node complexity.ts",
     "build": "webpack",
-    "all": "npm run build && npm run test && npm run coverage && npm run complexity"
+    "all": "npm run build && npm run test && npm run complexity"
   },
   "author": "",
   "license": "MIT",
