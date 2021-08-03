@@ -33,7 +33,7 @@
     "webpack-cli": "^4.7.0"
   },
   "dependencies": {
-    "console-table-printer": "file:../console-table-printer2",
+    "console-table-printer": "^2.9.0",
     "franc": "^5.0.0",
     "relaxed-json": "^1.0.3"
   }
