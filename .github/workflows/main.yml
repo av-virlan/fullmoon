@@ -19,12 +19,12 @@ jobs:
       - run: npm install
       - run: npm run all
       - name: Zip Release
-      - uses: TheDoctor0/zip-release@0.6.0
+        uses: TheDoctor0/zip-release@0.6.0
         with:
           filename: fullmoon.zip
           path: ./dist
           directory: ./dist
       - name: Action Release
-      - uses: yakuhzi/release-asset@v1.2.3
+        uses: yakuhzi/release-asset@v1.2.3
         with:
           file: fullmoon.zip
