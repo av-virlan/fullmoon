@@ -2,15 +2,19 @@ import { expect } from "chai";
 import { SearchIndex } from "../src/SearchIndex";
 import { BenchmarkSuite } from "./TestUtils";
 import { Document } from '../src/Common/Document';
+import { LanguageDetection } from "../src/Common/LanguageDetection";
 
 describe('index management', function () {
+    before(async function () {
+        await LanguageDetection.init();
+    });
     beforeEach(BenchmarkSuite.record);
     after(BenchmarkSuite.report);
 
-    it("can create index", function () {
+    it("can create index", async function () {
         let si: SearchIndex = new SearchIndex();
-        
-        this.bench.record("building index", () => {
+
+        await this.bench.record("building index", () => {
             si = new SearchIndex();
             si.configure({
                 fields: [{
@@ -29,9 +33,9 @@ describe('index management', function () {
         expect(stats.lastChange).lessThanOrEqual(Date.now());
     });
 
-    it("can serialize index", function () {
+    it("can serialize index", async function () {
         let si: SearchIndex;
-        this.bench.record("building index", () => {
+        await this.bench.record("building index", () => {
             si = new SearchIndex();
             si.configure({
                 fields: [{
@@ -43,7 +47,7 @@ describe('index management', function () {
         });
 
         let serialized: string = '';
-        this.bench.record("serialize index", () => {
+        await this.bench.record("serialize index", () => {
             serialized = si.toJSON();
         });
 
@@ -51,10 +55,10 @@ describe('index management', function () {
         expect(serialized).to.contain("si").to.contain('def').to.contains('some');
     });
 
-    it("adds documents and ignores fields that are not defined as stored", function () {
+    it("adds documents and ignores fields that are not defined as stored", async function () {
         let si: SearchIndex;
 
-        this.bench.record("building index", () => {
+        await this.bench.record("building index", () => {
             si = new SearchIndex();
             si.configure({
                 fields: [{
@@ -74,12 +78,12 @@ describe('index management', function () {
         });
 
         let id: string = '';
-        this.bench.record("adding doc", () => {
-            id = si.indexDocument({ some: "value", notPartOfFieldDefinition: "me", notStored: "finger-scrossed" });
+        await this.bench.record("adding doc", async () => {
+            id = await si.indexDocument({ some: "value", notPartOfFieldDefinition: "me", notStored: "finger-scrossed" });
         });
 
         let doc: Document = new Document('');
-        this.bench.record("getting doc", () => {
+        await this.bench.record("getting doc", () => {
             doc = si.getDocument(id);
         });
 
@@ -88,10 +92,10 @@ describe('index management', function () {
         expect(Object.keys(doc.fields).length).eq(1);
     });
 
-    it("can find document", function(){
+    it("can find document", async function () {
         let si: SearchIndex;
 
-        this.bench.record("building index", () => {
+        await this.bench.record("building index", () => {
             si = new SearchIndex();
             si.configure({
                 fields: [{
@@ -111,17 +115,17 @@ describe('index management', function () {
         });
 
         let id: string;
-        this.bench.record("adding doc", () => {
-            id = si.indexDocument({ some: "value", notPartOfFieldDefinition: "me", notStored: "finger-scrossed" });
+        await this.bench.record("adding doc", async () => {
+            id = await si.indexDocument({ some: "value", notPartOfFieldDefinition: "me", notStored: "finger-scrossed" });
         });
 
-        let searchResult = new Array<{ [k:string]: any }>();
-        this.bench.record("search doc in all fields", () => {
+        let searchResult = new Array<{ [k: string]: any }>();
+        await this.bench.record("search doc in all fields", () => {
             searchResult = si.search("value");
         });
 
-        let noResult = new Array<{ [k:string]: any}>();
-        this.bench.record("search doc in specific field", () => {
+        let noResult = new Array<{ [k: string]: any }>();
+        await this.bench.record("search doc in specific field", () => {
             noResult = si.search("me", ["nonExistent", "notPartOfFieldDefinition"]);
         });
 
@@ -129,10 +133,10 @@ describe('index management', function () {
         expect(noResult.length).eq(0);
     });
 
-    it("uses first analyzer mentioned on field", function(){
+    it("uses first analyzer mentioned on field", async function () {
         let si: SearchIndex;
 
-        this.bench.record("building index", () => {
+        await this.bench.record("building index", () => {
             si = new SearchIndex();
             si.configure({
                 fields: [{
@@ -144,22 +148,22 @@ describe('index management', function () {
         });
 
         let id: string;
-        this.bench.record("adding doc", () => {
-            id = si.indexDocument({ some: "value", notPartOfFieldDefinition: "me", notStored: "fingers-crossed" });
+        await this.bench.record("adding doc", async () => {
+            id = await si.indexDocument({ some: "value", notPartOfFieldDefinition: "me", notStored: "fingers-crossed" });
         });
 
-        let searchResult = new Array<{ [k:string]: any }>();
-        this.bench.record("search doc in all fields", () => {
+        let searchResult = new Array<{ [k: string]: any }>();
+        await this.bench.record("search doc in all fields", () => {
             searchResult = si.search("value");
         });
 
         expect(searchResult.length).eq(1);
     });
 
-    it("falls back to text analyzer group if unknown analyzer referenced", function(){
+    it("falls back to text analyzer group if unknown analyzer referenced", async function () {
         let si: SearchIndex;
 
-        this.bench.record("building index", () => {
+        await this.bench.record("building index", () => {
             si = new SearchIndex();
             si.configure({
                 fields: [{
@@ -171,22 +175,22 @@ describe('index management', function () {
         });
 
         let id: string;
-        this.bench.record("adding doc", () => {
-            id = si.indexDocument({ some: "value", notPartOfFieldDefinition: "me", notStored: "fingers-crossed" });
+        await this.bench.record("adding doc", async () => {
+            id = await si.indexDocument({ some: "value", notPartOfFieldDefinition: "me", notStored: "fingers-crossed" });
         });
 
-        let searchResult = new Array<{ [k:string]: any }>();
-        this.bench.record("search doc in all fields", () => {
+        let searchResult = new Array<{ [k: string]: any }>();
+        await this.bench.record("search doc in all fields", () => {
             searchResult = si.search("value");
         });
 
         expect(searchResult.length).eq(1);
     });
 
-    it("can remove document", function(){
+    it("can remove document", async function () {
         let si: SearchIndex;
 
-        this.bench.record("building index", () => {
+        await this.bench.record("building index", () => {
             si = new SearchIndex();
             si.configure({
                 fields: [{
@@ -206,25 +210,25 @@ describe('index management', function () {
         });
 
         let id: string;
-        this.bench.record("adding doc", () => {
-            id = si.indexDocument({ some: "value", notPartOfFieldDefinition: "me", notStored: "fingers-crossed" });
+        await this.bench.record("adding doc", async () => {
+            id = await si.indexDocument({ some: "value", notPartOfFieldDefinition: "me", notStored: "fingers-crossed" });
         });
 
-        this.bench.record("adding doc 2", () => {
-            id = si.indexDocument({ some: "value2", notPartOfFieldDefinition: "me2", notStored: "fingers-crossed2" });
+        await this.bench.record("adding doc 2", async () => {
+            id = await si.indexDocument({ some: "value2", notPartOfFieldDefinition: "me2", notStored: "fingers-crossed2" });
         });
 
         let doc: Document;
-        this.bench.record("getting doc", () => {
+        await this.bench.record("getting doc", () => {
             doc = si.getDocument(id);
         });
 
-        this.bench.record("removing doc", () => {
+        await this.bench.record("removing doc", () => {
             si.removeDocument(id);
         });
 
         let docAfterRemove: Document = new Document('');
-        this.bench.record("getting doc after remove", () => {
+        await this.bench.record("getting doc after remove", () => {
             docAfterRemove = si.getDocument(id);
         });
 

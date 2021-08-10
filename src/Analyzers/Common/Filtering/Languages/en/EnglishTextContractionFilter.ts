@@ -1,8 +1,8 @@
 import { AnalyzerSettings } from "../../../../../Common/AnalyzerSettings";
-import { IFilter } from "../../../../../Common/IFilter";
+import { IConditionalFilter } from "../../../../../Common/IConditionalFilter";
 import { TokenDetail } from "../../../../../Common/TokenDetail";
 
-export class EnglishTextContractionFilter implements IFilter {
+export default class EnglishTextContractionFilter implements IConditionalFilter {
 
     public static readonly CONTRACTIONS_SETTING_KEY: string = "contractions";
 
@@ -22,24 +22,26 @@ export class EnglishTextContractionFilter implements IFilter {
     }
 
     supports(type: string): boolean {
-        return type.toLowerCase() === "eng";
+        return type.toLowerCase() === "en" || type.toLowerCase() === "eng";
     }
 
-    process(tokens: Map<string, Array<TokenDetail>>): Map<string, Array<TokenDetail>> {
-        const result = new Map<string, Array<TokenDetail>>(tokens);
+    process(tokens: Map<string, Array<TokenDetail>>): Promise<Map<string, Array<TokenDetail>>> {
+        return new Promise(resolve => {
+            const result = new Map<string, Array<TokenDetail>>(tokens);
 
-        const contractions: string[] = [...result.keys()].filter(key => EnglishTextContractionFilter._contractions.has(key));
+            const contractions: string[] = [...result.keys()].filter(key => EnglishTextContractionFilter._contractions.has(key));
 
-        contractions.forEach(key => {
-            const expandedContraction = EnglishTextContractionFilter._contractions.get(key)!;
-            const value = result.get(key)!;
-            expandedContraction.forEach(expansion => {
-                const currentValue = result.get(expansion) || [];
-                Array.prototype.push.apply(currentValue, value);
-                result.set(expansion, value);
+            contractions.forEach(key => {
+                const expandedContraction = EnglishTextContractionFilter._contractions.get(key)!;
+                const value = result.get(key)!;
+                expandedContraction.forEach(expansion => {
+                    const currentValue = result.get(expansion) || [];
+                    Array.prototype.push.apply(currentValue, value);
+                    result.set(expansion, value);
+                });
             });
-        });
 
-        return result;
+            resolve(result);
+        });
     }
 }

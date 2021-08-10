@@ -34,7 +34,7 @@ export class TextAnalyzer implements IAnalyzerGroup {
         this._analyzer = this.getAnalyzer(this._settings.get("type"));
     }
     
-    process(fieldValue: FieldValue, documentId: string): Map<string, Array<TokenDetail>> {
+    process(fieldValue: FieldValue, documentId: string): Promise<Map<string, Array<TokenDetail>>> {
         return this._analyzer.process(fieldValue, documentId);
     }
 }

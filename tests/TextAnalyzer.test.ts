@@ -6,9 +6,9 @@ describe('text analyzer', function () {
     beforeEach(BenchmarkSuite.record);
     after(BenchmarkSuite.report);
 
-    it("supports plain text analysis", function(){
-        var analyzer = new TextAnalyzer({type: "some-dumb-file-type"});
-        var result = analyzer.process("some-value", "0");
-        expect(result.size).eq(0);
+    it("supports plain text analysis", async function () {
+        var analyzer = new TextAnalyzer({ type: "some-dumb-file-type" });
+        const tokens = await analyzer.process("some-value", "0");
+        expect(tokens.size).eq(0);
     });
 });

@@ -13,8 +13,10 @@ export class CodeAnalyzer implements IAnalyzerGroup {
         this._settings = analyzerSettings;
     }
     
-    process(fieldValue: FieldValue, documentId: string): Map<string, Array<TokenDetail>> {
+    process(fieldValue: FieldValue, documentId: string): Promise<Map<string, Array<TokenDetail>>> {
         //TODO: process the fieldValue
-        return new Map<string, Array<TokenDetail>>();
+        return new Promise(resolve => {
+            resolve(new Map<string, Array<TokenDetail>>());
+        });
     }
 }

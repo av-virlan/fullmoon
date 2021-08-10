@@ -3,6 +3,6 @@ import { TokenDetail } from './TokenDetail';
 
 export interface IAnalyzer {
     supports(type: string): boolean;
-    process(fieldValue: FieldValue, documentId: string): Map<string, Array<TokenDetail>>;
+    process(fieldValue: FieldValue, documentId: string): Promise<Map<string, Array<TokenDetail>>>;
 }
 

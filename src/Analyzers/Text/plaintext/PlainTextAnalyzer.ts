@@ -3,6 +3,7 @@ import { IAnalyzer } from "../../../Common/IAnalyzer";
 import { IFilter } from "../../../Common/IFilter";
 import { TokenDetail } from "../../../Common/TokenDetail";
 import { TryDecode } from "../../../Common/Utils";
+import { EmojiContractionFilter } from "../../Common/Filtering/EmojiContractionFilter";
 import { LanguageContractionFilterFactory } from "../../Common/Filtering/LanguageContractionFilterFactory";
 import { LanguageStopwordFilterFactory } from "../../Common/Filtering/LanguageStopwordFilterFactory";
 import { LowercaseFilter } from "../../Common/Filtering/LowercaseFilter";
@@ -66,6 +67,7 @@ export class PlainTextAnalyzer implements IAnalyzer {
     private _languageStopwordFilterFactory: LanguageStopwordFilterFactory;
     private _lowercaseFilter: IFilter = new LowercaseFilter();
     private _languageContractionFilterFactory: LanguageContractionFilterFactory;
+    private _emojiContractionFilter: IFilter = new EmojiContractionFilter();
 
     private _settings: Map<string, any> = new Map<string, any>([
         //TODO: add default settings
@@ -75,24 +77,24 @@ export class PlainTextAnalyzer implements IAnalyzer {
         Object.keys(customSettings).forEach(key => this._settings.set(key, customSettings[key]));
     }
 
-    private stem(tokens: Map<string, Array<TokenDetail>>, fieldStringValue: string): Map<string, Array<TokenDetail>> {
-        let stemmer = this._languageStemmerFactory.get(fieldStringValue);
-        return stemmer.process(tokens);
+    private stem(tokens: Map<string, Array<TokenDetail>>, fieldStringValue: string): Promise<Map<string, Array<TokenDetail>>> {
+        return this._languageStemmerFactory.get(fieldStringValue).then(stemmer => stemmer.process(tokens));
     }
 
-    private stopWordFilter(tokens: Map<string, Array<TokenDetail>>, fieldStringValue: string): Map<string, Array<TokenDetail>> {
-        let stopWordFilter = this._languageStopwordFilterFactory.get(fieldStringValue);
-        return stopWordFilter.process(tokens);
+    private stopWordFilter(tokens: Map<string, Array<TokenDetail>>, fieldStringValue: string): Promise<Map<string, Array<TokenDetail>>> {
+        return this._languageStopwordFilterFactory.get(fieldStringValue).then(stopWordFilter => stopWordFilter.process(tokens));
     }
 
-    private contractionFilter(tokens: Map<string, Array<TokenDetail>>, fieldStringValue: string): Map<string, Array<TokenDetail>> {
-        let contractionFilter = this._languageContractionFilterFactory.get(fieldStringValue);
-        return contractionFilter.process(tokens);
+    private contractionFilter(tokens: Map<string, Array<TokenDetail>>, fieldStringValue: string): Promise<Map<string, Array<TokenDetail>>> {
+        return this._languageContractionFilterFactory.get(fieldStringValue).then(contractionFilter => contractionFilter.process(tokens));
     }
 
-    private tokenize(fieldStringValue: string, documentId: string): Map<string, Array<TokenDetail>> {
-        let tokenizer = this._languageTokenizerFactory.get(fieldStringValue);
-        return tokenizer.process(fieldStringValue, documentId);
+    private emojiFilter(tokens: Map<string, Array<TokenDetail>>): Promise<Map<string, Array<TokenDetail>>> {
+        return this._emojiContractionFilter.process(tokens);
+    }
+
+    private tokenize(fieldStringValue: string, documentId: string): Promise<Map<string, Array<TokenDetail>>> {
+        return this._languageTokenizerFactory.get(fieldStringValue).then((tokenizer: IAnalyzer) => tokenizer.process(fieldStringValue, documentId));
     }
 
     private casing(tokens: Map<string, Array<TokenDetail>>) {
@@ -111,25 +113,25 @@ export class PlainTextAnalyzer implements IAnalyzer {
         return this.SUPPORTED_TYPES.indexOf(type.toLowerCase()) >= 0;
     }
 
-    process(fieldValue: any, documentId: string): Map<string, Array<TokenDetail>> {
+    process(fieldValue: any, documentId: string): Promise<Map<string, Array<TokenDetail>>> {
         let decodeResult = TryDecode(fieldValue);
 
         if (decodeResult.error) {
             let tokenDetail = new TokenDetail(documentId, [{ start: 0, end: fieldValue.length - 1 }]);
-            return new Map<string, Array<TokenDetail>>([
-                [fieldValue, [tokenDetail]]
-            ])
+            return new Promise<Map<string, Array<TokenDetail>>>(resolve => {
+                    const emptyMap = [fieldValue, [tokenDetail]];
+                    resolve(new Map<string, Array<TokenDetail>>(emptyMap))
+                }
+            );
         }
 
-        let fieldStringValue = decodeResult.value;
+        const fieldStringValue = decodeResult.value;
 
-        let tokens = this.tokenize(fieldStringValue, documentId);
-        tokens = this.casing(tokens);
-        tokens = this.stopWordFilter(tokens, fieldStringValue);
-        tokens = this.contractionFilter(tokens, fieldStringValue);
-        tokens = this.stem(tokens, fieldStringValue);
-
-        return tokens;
+        return this.tokenize(fieldStringValue, documentId)
+            .then(tokens => this.casing(tokens))
+            .then(tokens => this.stopWordFilter(tokens, fieldStringValue))
+            .then(tokens => this.contractionFilter(tokens, fieldStringValue))
+            .then(tokens => this.emojiFilter(tokens))
+            .then(tokens => this.stem(tokens, fieldStringValue));
     }
-
 }

@@ -1,27 +1,29 @@
-import * as franc from "franc";
 import { AnalyzerSettings } from "../../../Common/AnalyzerSettings";
-import { IFilter } from "../../../Common/IFilter";
+import { IConditionalFilter } from "../../../Common/IConditionalFilter";
+import { LanguageDetection } from "../../../Common/LanguageDetection";
 import { NoOpFilter } from "../NoOpFilter";
 import { EnglishTextStemmer } from "./Languages/en/EnglishTextStemmer";
 
 export class LanguageStemmerFactory {
-    private _languageStemmers: Array<IFilter> = new Array<IFilter>();
+    private _languageStemmers = new Array<IConditionalFilter>();
 
-    constructor(customSettings: AnalyzerSettings){
+    constructor(customSettings: AnalyzerSettings) {
         this._languageStemmers.push(new EnglishTextStemmer(customSettings));
         //TODO: add other languages
     }
 
-    get(value: string): IFilter {
-        let language = franc(value);
-        
-        for(let stemmerIndex = 0; stemmerIndex < this._languageStemmers.length; stemmerIndex++) {
-            let currentStemmer = this._languageStemmers[stemmerIndex];
-            if(currentStemmer.supports(language)) {
-                return currentStemmer;
-            }
-        }
+    get(value: string): Promise<IConditionalFilter> {
+        return new Promise(resolve => {
+            LanguageDetection.detect(value).then((label: string) => {
+                for (let stemmerIndex = 0; stemmerIndex < this._languageStemmers.length; stemmerIndex++) {
+                    let currentStemmer = this._languageStemmers[stemmerIndex];
+                    if (currentStemmer.supports(label)) {
+                        return resolve(currentStemmer);
+                    }
+                }
 
-        return new NoOpFilter();
+                return resolve(new NoOpFilter());
+            });
+        });
     }
 }

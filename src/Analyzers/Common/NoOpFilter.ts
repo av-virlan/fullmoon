@@ -8,9 +8,11 @@ export class NoOpFilter implements IFilter {
         return true;
     }
 
-    process(tokens: Map<string, Array<TokenDetail>>): Map<string, Array<TokenDetail>> {
-        console.log("NoOpFilter - returning map as-is")
-        return tokens;
+    process(tokens: Map<string, Array<TokenDetail>>): Promise<Map<string, Array<TokenDetail>>> {
+        return new Promise(resolve => {
+            console.log("NoOpFilter - returning map as-is")
+            resolve(tokens);
+        });
     }
 
 }

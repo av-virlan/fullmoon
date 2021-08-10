@@ -1,8 +1,8 @@
 import { AnalyzerSettings } from "../../../../../Common/AnalyzerSettings";
-import { IFilter } from "../../../../../Common/IFilter";
+import { IConditionalFilter } from "../../../../../Common/IConditionalFilter";
 import { TokenDetail } from "../../../../../Common/TokenDetail";
 
-export class EnglishTextStopwordFilter implements IFilter {
+export class EnglishTextStopwordFilter implements IConditionalFilter {
 
     public static readonly STOPWORDS_SETTING_KEY = "stopwords";
     public static readonly CLEAN_JARGON_SETTINGS_KEY = "cleanJargon";
@@ -24,16 +24,18 @@ export class EnglishTextStopwordFilter implements IFilter {
     }
 
     supports(type: string): boolean {
-        return type.toLowerCase() === "eng";
+        return type.toLowerCase() === "en" || type.toLowerCase() === "eng";
     }
 
-    process(tokens: Map<string, Array<TokenDetail>>): Map<string, Array<TokenDetail>> {
-        let result = new Map<string, Array<TokenDetail>>();
+    process(tokens: Map<string, Array<TokenDetail>>): Promise<Map<string, Array<TokenDetail>>> {
+        return new Promise(resolve => {
+            let result = new Map<string, Array<TokenDetail>>();
 
-        let validTokens = [...tokens.keys()].filter(key => key.length > 1 && this._settings.get(EnglishTextStopwordFilter.STOPWORDS_SETTING_KEY).indexOf(key) === -1 && !this.isJargon(key));
-        validTokens.forEach(token => result.set(token, tokens.get(token)!));
+            let validTokens = [...tokens.keys()].filter(key => key.length > 1 && this._settings.get(EnglishTextStopwordFilter.STOPWORDS_SETTING_KEY).indexOf(key) === -1 && !this.isJargon(key));
+            validTokens.forEach(token => result.set(token, tokens.get(token)!));
 
-        return result;
+            resolve(result);
+        });
     }
 
     private isJargon(key: string): boolean {

@@ -8,8 +8,10 @@ export class NoOpAnalyzer implements IAnalyzer {
         return true;
     }
 
-    process(fieldValue: any, documentId: string): Map<string, Array<TokenDetail>> {
-        console.log("NoOpAnalyzer - returning empty map");
-        return new Map<string, Array<TokenDetail>>();
+    process(fieldValue: any, documentId: string): Promise<Map<string, Array<TokenDetail>>> {
+        return new Promise(resolve => {
+            console.log("NoOpAnalyzer - returning empty map");
+            resolve(new Map<string, Array<TokenDetail>>());
+        });
     }
 }

@@ -1,9 +1,8 @@
 import { AnalyzerSettings } from "../../../../../Common/AnalyzerSettings";
-import { IAnalyzer } from "../../../../../Common/IAnalyzer";
-import { IFilter } from "../../../../../Common/IFilter";
+import { IConditionalFilter } from "../../../../../Common/IConditionalFilter";
 import { TokenDetail } from "../../../../../Common/TokenDetail";
 
-export class EnglishTextStemmer implements IFilter {
+export class EnglishTextStemmer implements IConditionalFilter {
     private _settings: Map<string, any> = new Map<string, any>([
         //TODO: add default settings
     ]);
@@ -17,12 +16,12 @@ export class EnglishTextStemmer implements IFilter {
     }
 
     supports(type: string): boolean {
-        return type.toLowerCase() === "eng";
+        return type.toLowerCase() === "en" || type.toLowerCase() === "eng";
     }
 
-    process(tokens: Map<string, Array<TokenDetail>>): Map<string, Array<TokenDetail>> {
+    process(tokens: Map<string, Array<TokenDetail>>): Promise<Map<string, Array<TokenDetail>>> {
         //TODO: implement stemming
-        return tokens;
+        return new Promise(resolve => resolve(tokens));
     }
 
 }

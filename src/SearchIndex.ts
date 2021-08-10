@@ -1,11 +1,9 @@
-import { stringify } from 'relaxed-json';
 import { Document } from './Common/Document';
-import { FieldDefinition } from './Common/FieldDefinition';
 import { IndexDefinition } from './Common/IndexDefinition';
 import { IndexStats } from './Common/IndexStats';
 import { IndexDefinitionJSON, IndexJSON, SearchIndexJSON } from './Common/JSON';
 import { TokenDetail } from './Common/TokenDetail';
-import { CloneAsJSON, FlakeId } from './Common/Utils';
+import { FlakeId } from './Common/Utils';
 import { Index } from './Index'
 
 export class SearchIndex {
@@ -37,10 +35,10 @@ export class SearchIndex {
         }
     }
 
-    indexDocument(doc: { [k: string]: any }): string {
+    async indexDocument(doc: { [k: string]: any }): Promise<string> {
         const newDoc = new Document(doc._id || doc.id || this._idGenerator.generate());
         this.copyObjectTo(doc, newDoc.fields);
-        this._index.addDocument(newDoc);
+        await this._index.addDocument(newDoc);
         return newDoc.id;
     }
 

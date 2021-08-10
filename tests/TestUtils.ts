@@ -53,12 +53,12 @@ export class Benchmark {
         return sw;
     }
 
-    recordAndPrint(label: string, fn: Function, repeats?: number, skipConsole?: boolean): Array<BenchmarkResult> {
-        this.record(label, fn, repeats);
+    async recordAndPrint(label: string, fn: Function, repeats?: number, skipConsole?: boolean): Promise<Array<BenchmarkResult>> {
+        await this.record(label, fn, repeats);
         return this.print(skipConsole);
     }
 
-    record(label: string, fn: Function, repeats?: number) {
+    async record(label: string, fn: Function, repeats?: number) {
         repeats = repeats || 1;
         let sw = this.get(label);
         let actualRepeats = 0;
@@ -67,7 +67,7 @@ export class Benchmark {
         for (let i = 0; i < repeats; i++) {
             try {
                 sw.start();
-                fn();
+                await fn();
                 sw.stop();
                 ++actualRepeats;
             } catch {
@@ -137,17 +137,16 @@ export class BenchmarkSuite {
         return bm;
     }
 
-    static record(done: any) {
+    static async record(repetitions: number = 99) {
         this.bench = BenchmarkSuite.get(this.currentTest.title);
         let fn = this.currentTest.fn.bind(this);
         if (this.currentTest.fn.toString().indexOf("this.bench.record") > -1) {
-            for (let i = 0; i < 99; i++) {
-                fn();
+            for (let i = 0; i < repetitions; i++) {
+                await fn();
             }
         } else {
-            this.bench.record("summary: " + this.currentTest.title, fn, 100);
+            await this.bench.record("summary: " + this.currentTest.title, fn, repetitions + 1);
         }
-        done();
     }
 
     static report() {

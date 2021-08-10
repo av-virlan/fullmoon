@@ -7,7 +7,7 @@ import { IndexJSON } from './Common/JSON';
 import { TokenDetail } from './Common/TokenDetail';
 
 export class Index {
-    private _documents: { [k: string] : Document };
+    private _documents: { [k: string]: Document };
     private _definition: IndexDefinition;
     private _analyzerFactory: AnalyzerFactory;
     private _perFieldInvertedIndex: PerFieldInvertedIndex;
@@ -28,23 +28,23 @@ export class Index {
         this._definition.processingPipeline.forEach(pipeline => pipeline(document, this._definition));
     }
 
-    private addToInvertedIndex(document: Document, docIndex: string) {
-        this._definition.fieldValues(document).forEach(fieldDefinition => {
+    private async addToInvertedIndex(document: Document, docIndex: string) {
+        await Promise.all(this._definition.fieldValues(document).map(async fieldDefinition => {
             let analyzer = this._analyzerFactory.get(fieldDefinition.analyzer);
             let fieldValue = document.fields[fieldDefinition.name];
-            let newTokens = analyzer.process(fieldValue, docIndex);
+            let tokens = await analyzer.process(fieldValue, docIndex);
 
-            newTokens.forEach((newTokenDetails: TokenDetail[], newToken: string) => {
+            tokens.forEach((newTokenDetails: TokenDetail[], newToken: string) => {
                 this._perFieldInvertedIndex.ensure(fieldDefinition.name, newToken, ...newTokenDetails);
             });
-        });
+        }));
     }
 
     private removeFromInvertedIndex(documentId: string) {
         this._perFieldInvertedIndex.removeTokensForDocument(documentId);
     }
 
-    constructor(indexDefinition: IndexDefinition = new IndexDefinition(), perFieldInvertedIndex: PerFieldInvertedIndex = new PerFieldInvertedIndex(), documents: { [k:string]: Document } = {}, stats: IndexStats = new IndexStats()) {
+    constructor(indexDefinition: IndexDefinition = new IndexDefinition(), perFieldInvertedIndex: PerFieldInvertedIndex = new PerFieldInvertedIndex(), documents: { [k: string]: Document } = {}, stats: IndexStats = new IndexStats()) {
         this._analyzerFactory = new AnalyzerFactory();
         this._definition = indexDefinition;
         this._perFieldInvertedIndex = perFieldInvertedIndex;
@@ -72,10 +72,10 @@ export class Index {
         };
     }
 
-    addDocument(document: Document) {
+    async addDocument(document: Document) {
         this.preprocessDocument(document);
         let docIndex = this.storeDocument(document);
-        this.addToInvertedIndex(document, docIndex);
+        await this.addToInvertedIndex(document, docIndex);
         this._stats.lastChange = Date.now();
         this._stats.docCount++;
     }
